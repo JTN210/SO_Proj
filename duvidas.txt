@@ -1,0 +1,13 @@
+indexar é eu conseguir mapear para onde estao os meus ficheiros
+contexto geral
+/home
+/home/dir1
+/home/dir2
+/home/dir1/file1				tipo como se fosse uma arvore com varias ramificações
+/home/dir1/file2
+/home/dir2/file1
+/home/dir2/file2
+contexto do trabalho
+os ficheiros já existem.
+é como quase criar uma base de dados, temos de fazer uma alancagem para ir buscar ou indexa-lo... etc... 
+eu recebo o documento com uma meta-informaçao e vou criar um serviço centralizado onde apartir da key/identificador de registo eu vou saber qual é o meu ficheiro, neste caso no meu documento eu vou ter o path, logo tambem vou saber onde ele está.
