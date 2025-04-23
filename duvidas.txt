@@ -15,6 +15,6 @@ eu recebo o documento com uma meta-informaçao e vou criar um serviço centraliz
 
 
 exercicio 5 do guião 6 é o que temos de fazer no trabalho
-
+um dos filhos executa o ls outro o wc e depois muito lume
 
 exercicio 6 é o que vai sair no teste.
