@@ -14,15 +14,17 @@ typedef struct docs
     int ano;
     char path[100];
 } Doc;
-
-typedef struct docId
+//Não sei se esta struct da listaDocs esta bem feita mas o reg é a key que vamos usar para depois saber identificar os ficheiros
+typedef struct listaDocs
 {
-    Doc docs[100];
-    
-    int id;
-} DocId;
+    int reg;
+    char titulo[100];
+    char autores[100]; 
+    int ano;
+    char path[100];
+} ListaDocs;
 
-int insereDoc(char *titulo, char *autores, int ano, char *path);
+int indexaDoc(char *titulo, char *autores, int ano, char *path);
 
 int consultaDoc(int reg);
 
