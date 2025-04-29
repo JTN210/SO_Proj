@@ -20,7 +20,17 @@ for (int i = 0; i < N; i++)
 		}
 		_exit(counter);
 	}
-	
+	else
+	{
+		pids[i] = fork_ret;
+	}
+}
+
+for (int i = 0; i < N; i++) {
+	waitpid(pids[i], &status, 0);
+	if (WIFEXITED(status)) {
+		printf("%s %d\n", commands[i], WEXITSTATUS(status));
+	}
 }
 
 }
