@@ -12,13 +12,15 @@ int main(int argc, char** argv) {
     if (pid == 0)
     {
         close(fd[1]);
+
         dup2(fd[0], 0);
         close(fd[0]);
+
         execlp("wc", "wc", NULL); 
         _exit(0);
     }
     else
-     {
+    {
         close(fd[0]);
         ssize_t bytes_read;
         char buffer[1024];
@@ -27,9 +29,10 @@ int main(int argc, char** argv) {
         }
         close(fd[1]);
     }
-    pid_t termiated_pid = wait(&status);
-    if (WIFEXITED(status)) {
-        printf("O filho terminou com codigo de saida %d\n", WEXITSTATUS(status));
+    pid_t terminated_pid = wait(&status);
+    if (WIFEXITED(status)) 
+    {
+        printf("O filho %d terminou com codigo de saida %d\n", terminated_pid, WEXITSTATUS(status));
     }
     return 0;
 } 
