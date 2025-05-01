@@ -1,15 +1,23 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -Iinclude
 
-dclient: dclient.o client.o
+CLIENT_SRC = client.c
+SERVER_SRC = server.c
+CLIENT_BIN = dclient
+SERVER_BIN = dserver
 
-client: client.o dclient.h
+all: dclient dserver
 
-dclient.o: dclient.c dclient.h
+dclient: $(CLIENT_SRC)
+	$(CC) $(CFLAGS) -o $(CLIENT_BIN) $(CLIENT_SRC)
 
-dclient.o: dclient.c dclient.h
+dserver: $(SERVER_SRC)
+	$(CC) $(CFLAGS) -o $(SERVER_BIN) $(SERVER_SRC)
 
 clean:
-	rm -f *.o dclient docs.txt
+	rm -f *.o
 
-	
+fclean: clean
+	rm -f $(CLIENT_BIN) $(SERVER_BIN)
+
+re: fclean all
