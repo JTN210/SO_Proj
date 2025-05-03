@@ -33,10 +33,7 @@ int main(){
                 pid_t pid = fork();
                 if (pid == 0) { // Filho
                     close(fd);
-                    char **strs = malloc(sizeof(char *) * 6);
-                    for (int i = 0; i < 6; i++)
-                        strs[i] = malloc(sizeof(char) * 512);
-                    parsing(fifoName, strs);
+                    char **strs = parsing(fifoName);
                     execute(strs);
                     _exit(0);
                 }

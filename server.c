@@ -11,7 +11,7 @@ int nPipeSigns(char *str)
     return counter;
 }
 
-void parsing(char* fifoName, char **args)
+void parsing(char* fifoName)
 {
     int fdFIFO = open(fifoName, O_RDONLY, 0666);
 
@@ -19,9 +19,26 @@ void parsing(char* fifoName, char **args)
     int bytesRead = read(fdFIFO, &str, 512);
 
     int nArgs = nPipeSigns(str);
+    char **strs = malloc(sizeof(char *) * (nArgs + 1));
+    for (int i = 0; i < nArgs - 1; i++)
+        strs[i] = malloc(sizeof(char) * 512);
     args[nArgs] = NULL;
 
-    int i, j = 0 ;
+    int i = 0; // indice de str
+    int j = 0; // indice das strings do char** args[k][j]
+    int k = 0; // indica a string que estamos a escrever (args[k])
 
-    ////////// falta acabar parsing
+    while(str[i] != '\0')
+    {
+        if (str[i] == '|')
+        {
+            args[k][j] = '\0';
+            j = 0;
+            k++;
+        }
+        else
+            args[k][j] = str[i];
+        i++;
+    }
+    return (args);
 }
