@@ -11,6 +11,7 @@ int main(int argc, char* argv[]){
         printf("Remover Documento: ./dclient -d [registo]\n");
         printf("Contar linhas: ./dclient -l [registo] [nome]\n");
         printf("Listar IDs: ./dclient -s [nome]\n");
+        printf("Persistência: ./dclient -f\n");
         return 1;
     }
 

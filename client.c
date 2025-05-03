@@ -21,20 +21,3 @@ void build_message(int argc, char *argv[],char *message, size_t message_size){
         message[k < message_size ? k : message_size - 1] = '\0';
     }
 }
-int indexaDoc(char *titulo, char *autores, int ano, char *path)
-{
-}
-
-int consultaDoc(int reg)
-{
-}
-
-int removeDoc(int reg)
-{
-}       
-int numeroLinhas(int reg, char *nome)
-{
-}
-int listaIdDocs(char *nome)
-{
-}

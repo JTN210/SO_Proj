@@ -1,8 +1,10 @@
 // "Pedido Server"
 
-#include <dserver.h>
+#include "dserver.h"
+// gcc -o dserver dserver.c -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0
 
-int main(){
+int main(int argc, char* argv[]){
+    ID = 1;
     int fd;
 
     char *main_fifo = "server_pipe";
@@ -10,7 +12,10 @@ int main(){
     mkfifo(main_fifo,0666);
     char inBuff[512];
     int counter = 1;
+    GHashTable *tabela = g_hash_table_new(g_str_hash, g_str_equal);
 
+    char docFolder = argv[1];
+    char cache_size = argv[2];
     while (1){
         int fd = open(main_fifo, O_RDONLY);
         if (fd == -1)
@@ -34,7 +39,7 @@ int main(){
                 if (pid == 0) { // Filho
                     close(fd);
                     char **strs = parsing(fifoName);
-                    execute(strs);
+                    choose_option(fifoName,strs); // escolhe a opçao e manda executar
                     _exit(0);
                 }
             }
@@ -45,39 +50,46 @@ int main(){
             }
             
         }
-
         close(fd);
     }
-
+/* ISTO É A PARA METER O PERSISTENCIA A CORRER MAS PRIMEIRO O GAJO TEM DE EXECUTAR O ./dclient -f
+if (!persistencia(tabela))
+    g_printerr("Erro ao gravar Ficheirotemp\n");
+else
+    g_print("Meta-informação gravada com sucesso em “%s”\n", META_FILENAME);
+ */
     return 0;
 }
 
-int parsing(char fifo[],char** s) {
+
+
+int choose_option(char *fifo[],char** s, GHashTable *tabela) {
+
+    int exitCode;
+    if ( strcmp(s[1],"-a") == 0 )
+    {
+        exitCode = indexaDoc(s[2], s[3], atoi(s[4]), s[5]);
+    }
     
-    int fd = open(fifo,O_RDONLY);
-
-    if ( strcmp(argv[1],"-a") == 0 )
+    if ( strcmp(s[1],"-c") == 0 )
     {
-        return indexaDoc(argv[2], argv[3], argv[4]), argv[5]); //atoi passa de string para inteiro, quando escreves no terminal para executar um ficheiro, aquilo é uma string,
-    }
-    
-    if ( strcmp(argv[1],"-c") == 0 )
-    {
-       return consultaDoc((argv[2]));
+       exitCode = procuraID(fifo, atoi(s[2]), tabela);
     }
 
-    if ( strcmp(argv[1],"-d") == 0 )
+    if ( strcmp(s[1],"-d") == 0 )
     {
-        return removeDoc (atoi(argv[2]));
+        exitCode = removeDoc (tabela, atoi(s[2]));
     }
 
-    if ( strcmp(argv[1],"-l") == 0 )
+    if ( strcmp(s[1],"-l") == 0 )
     {
-       // return numeroLinhas(atoi(argv[2]),(argv[3]));
+       exitCode = numeroLinhas(fifo, tabela, atoi(s[2]),(s[3]));
     }
-    if ( strcmp(argv[1],"-s") == 0 )
+    if ( strcmp(s[1],"-s") == 0 )
     {
-        //return listaIdDocs(argv[2]);
+        //return listaIdDocs(s[2]);
     }
-    return 0;
+
+    // falta dar unlink ao fifo
+    return exitCode;
 }
