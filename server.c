@@ -67,27 +67,89 @@ int persistencia(GHashTable *tabela){
     return 0;
 }
 
-char *getNextLine(int fd)
-{
-    static int pos;
-    char buffer[512];
+char *getTextFromFile(int fd) {
+    char  buffer[512];
+    size_t total = 0;
+    size_t capacity = sizeof buffer;
+    char  *str = malloc(capacity + 1);
 
-    char *str = NULL;
-    // read()
+    if (!str) 
+        return NULL;
+
+    ssize_t n;
+    while ((n = read(fd, buffer, sizeof buffer)) > 0) {
+        if ((size_t)n < sizeof buffer)
+            buffer[n] = '\0';
+        else
+            buffer[sizeof buffer - 1] = '\0';
+
+        // Verificação de espaço
+        if (total + (size_t)n + 1 > capacity) {
+            // ajuste no espaço em 2x
+            size_t newcap = capacity * 2;
+            while (newcap < total + (size_t)n + 1)
+                newcap *= 2;
+            char *tmp = realloc(str, newcap + 1);
+            if (!tmp) {
+                free(str);
+                return NULL;
+            }
+            str = tmp;
+            capacity = newcap;
+        }
+
+        // Copiar os bytes lidos
+        memcpy(str + total, buffer, n);
+        total += (size_t)n;
+    }
+
+    if (n < 0) {
+        // erro no read
+        free(str);
+        return NULL;
+    }
+    str[total] = '\0';
+    return str;
 }
 
-int numeroLinhas(char *fifo, GHashTable *tabela, int id, char *keyword)
+int numeroLinhas(const char *fifo, GHashTable *tabela, int id, const char *keyword)
 {
-    Livro *procura = g_hash_table_lookup (tabela, &(id));
-    
+    Livro *procura = g_hash_table_lookup(tabela, GINT_TO_POINTER(id));
+    int fdFIFO = open(fifo, O_WRONLY, 0666);
+
     if (!procura)
+    {
+        write(fdFIFO, "Nao existe nenhum livro com esse ID\n", 37);
         return 0;
-    int fdLivro = open(procura->path, O_RDONLY, 0666);
-    char *linha = malloc(sizeof(char) * 512);
-    do {
-        linha = getNextLine(fd);
-    } while (linha)
-    // acabar o numero linhas
+    }
+
+    int fdLivro = open(procura->path, O_RDONLY);
+    if (fdLivro < 0) {
+        perror("open");
+        return 0;
+    }
+
+    char *texto = getTextFromFile(fdLivro);
+    close(fdLivro);
+    if (!texto)
+    {    
+        write(fdFIFO, "Numero de linhas com essa keyword: 0\n", 38);
+        return 1;
+    }
+
+    int nLinhas = 0;
+    char *p = texto;
+    while ((p = strstr(p, keyword)) != NULL) {
+        nLinhas++;
+        p += strlen(keyword);
+    }
+
+    free(texto);
+    int digitosDeInt = nLinhas / 10;
+    char strRetorno[37 + digitosDeInt];
+    snprintf(strRetorno, sizeof strRetorno, "Numero de linhas com essa keyword: %d\n", nLinhas);
+    write(fdFIFO, strRetorno, strlen(strRetorno));
+    return 1;
 }
 
 int procuraID(char *fifo, int id, GHashTable *tabela)
