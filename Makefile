@@ -1,18 +1,19 @@
 CC = gcc
-CFLAGS = -Wall -g -Iinclude
+CFLAGS = -Wall -g -Iinclude $(shell pkg-config --cflags glib-2.0)
+LDFLAGS = $(shell pkg-config --libs glib-2.0)
 
-CLIENT_SRC = client.c
-SERVER_SRC = server.c
+CLIENT_SRC = dclient.c client.c 
+SERVER_SRC = dserver.c server.c 
 CLIENT_BIN = dclient
 SERVER_BIN = dserver
 
-all: dclient dserver
+all: $(CLIENT_BIN) $(SERVER_BIN)
 
-dclient: $(CLIENT_SRC)
-	$(CC) $(CFLAGS) -o $(CLIENT_BIN) $(CLIENT_SRC)
+$(CLIENT_BIN): $(CLIENT_SRC)
+	$(CC) $(CFLAGS) -o $@ $(CLIENT_SRC) $(LDFLAGS)
 
-dserver: $(SERVER_SRC)
-	$(CC) $(CFLAGS) -o $(SERVER_BIN) $(SERVER_SRC)
+$(SERVER_BIN): $(SERVER_SRC)
+	$(CC) $(CFLAGS) -o $@ $(SERVER_SRC) $(LDFLAGS)
 
 clean:
 	rm -f *.o

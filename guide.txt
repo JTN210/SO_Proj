@@ -1,0 +1,62 @@
+static Livro *
+livro_new (int id, const char *title, const char *author, int year, const char *path)
+{
+    Livro *l = g_new (Livro, 1);
+    l->id     = id;
+    l->title  = g_strdup (title);
+    l->author = g_strdup (author);
+    l->year   = year;
+    l->path   = g_strdup (path);
+    return l;
+}
+
+static void
+livro_free (gpointer data)
+{
+    Livro *l = data;
+    g_free (l->title);
+    g_free (l->author);
+    g_free (l->path);
+    g_free (l);
+}
+
+/* —————————— main: exemplo de uso da GHashTable —————————— */
+
+int
+main (void)
+{
+    /* 1) Cria tabela onde a chave é um int e o valor é Livro*.
+       g_free vai liberar a chave (int*) e livro_free o valor. */
+    GHashTable *tabela = g_hash_table_new_full (
+        g_int_hash,    /* hash de inteiros */
+        g_int_equal,   /* igualdade de inteiros */
+        g_free,        /* destrói a chave (um int*) */
+        livro_free     /* destrói o Livro* */
+    );
+
+    /* 2) Cria alguns livros e insere na tabela */
+    Livro *l1 = livro_new (42, "O Senhor dos Anéis", "Tolkien", 1954, "/path/lotr");
+    int   *k1 = g_new (int, 1);
+    *k1 = l1->id;
+    g_hash_table_insert (tabela, k1, l1);
+
+    Livro *l2 = livro_new (7, "1984", "Orwell", 1949, "/path/1984");
+    int   *k2 = g_new (int, 1);
+    *k2 = l2->id;
+    g_hash_table_insert (tabela, k2, l2);
+
+    /* 3) Recupera um Livro* pelo id */
+    int id_procura = 42;
+    Livro *achado = g_hash_table_lookup (tabela, &id_procura);
+
+    if (achado)
+        g_print ("Livro %d: %s — %s (%d)\n",
+                 achado->id, achado->title,
+                 achado->author, achado->year);
+    else
+        g_print ("Livro com id %d não encontrado.\n", id_procura);
+
+    /* 4) Limpa tudo */
+    g_hash_table_destroy (tabela);
+    return 0;
+}

@@ -3,9 +3,12 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <glib.h>
 
 #define META_FILENAME "Ficheirotemp"
+
+extern int ID;
 
 typedef struct Livro {
     char *title;
@@ -15,18 +18,20 @@ typedef struct Livro {
     int id; // identificador único
 } Livro;
 
-int indexaDoc(char *titulo, char *autores, int ano, char *path);
+int indexaDoc(GHashTable *tabela, char* title, char* authors, int year, char* path, char *fifo);
 
-int consultaDoc(GHashTable *tabela);
+//int consultaDoc(GHashTable *tabela);
 
-int removeDoc(int reg);
+int removeDoc(GHashTable *tabela, int id);
 
-int numeroLinhas(int reg, char *nome);
+int numeroLinhas(const char *fifo, GHashTable *tabela, int id, const char *keyword);
 
-int choose_option(char fifo[],char** s);
+int choose_option(char *fifo, char** s, GHashTable *tabela);
 
-void procuraID();
+int procuraID(char *fifo, int id, GHashTable *tabela);
 
 int nGivenSigns(char *str, char c);
 
 char** parsing(char* fifoName);
+
+int persistencia(GHashTable *tabela);

@@ -14,16 +14,24 @@ int main(int argc, char* argv[]){
         printf("Persistência: ./dclient -f\n");
         return 1;
     }
+    
+    int fd_mainFIFO = open("server_pipe", O_WRONLY);
 
-    int fd_mainFIFO = open("server_pipe", O_RDONLY);
     if (fd_mainFIFO == -1)
     {
         perror("ERRO");
     }
     write(fd_mainFIFO, "Pedido Server", 14);
+    printf("Pedido enviado ao server\n");
+    close(fd_mainFIFO);
+
+    fd_mainFIFO = open("server_pipe", O_RDONLY);
+    if (fd_mainFIFO == -1)
+    {
+        perror("ERRO");
+    }
     
-    char str[512];
-    build_message(argc, argv, str, 512);
+    char *str = build_message(argc, argv);
     
     int bytesRead = 0;
     char fifoName[32];
@@ -37,11 +45,12 @@ int main(int argc, char* argv[]){
 
     int fdFIFO = open(fifoName, O_WRONLY, 0666);
     write(fdFIFO, str, strlen(str));
+    printf("Enviamos pedido para pipe\n");
     close(fdFIFO);
 
     char serverResponse[512];
     fdFIFO = open(fifoName, O_RDONLY, 0666);
     read(fdFIFO, &serverResponse, 512);
-    printf("%s\n", serverResponse);
+    printf("Server Response:\n%s\n", serverResponse);
     close(fdFIFO);
 }

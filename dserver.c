@@ -3,6 +3,8 @@
 #include "dserver.h"
 // gcc -o dserver dserver.c -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0
 
+int ID;
+
 int main(int argc, char* argv[]){
     ID = 1;
     int fd;
@@ -10,9 +12,10 @@ int main(int argc, char* argv[]){
     char *main_fifo = "server_pipe";
 
     mkfifo(main_fifo,0666);
+    printf("Criei fifo inicial!\n");
     char inBuff[512];
     int counter = 1;
-    GHashTable *tabela = g_hash_table_new(g_str_hash, g_str_equal);
+    GHashTable *tabela = g_hash_table_new(g_int_hash, g_int_equal);
 
     char docFolder = argv[1];
     char cache_size = argv[2];
@@ -26,29 +29,26 @@ int main(int argc, char* argv[]){
 
         ssize_t n = read(fd, inBuff, sizeof(inBuff));
         if (n > 0) {
-            if (!strcmp("Pedido Server", inBuff)) {
-                char fifoName[32];
-                int bytes = sprintf(fifoName, "client_response%d", counter);
-                mkfifo(fifoName, 0666);
-                counter++;
+            printf("Recebemos pedido de criação de fifo\n");
+            char fifoName[32];
+            int bytes = sprintf(fifoName, "client_response%d", counter);
+            mkfifo(fifoName, 0666);
+            counter++;
 
-                fd = open(main,O_WRONLY);
-                write(fd,fifoName,bytes);
+            fd = open(main_fifo,O_WRONLY);
+            write(fd,fifoName,bytes);
 
-                pid_t pid = fork();
-                if (pid == 0) { // Filho
-                    close(fd);
-                    char **strs = parsing(fifoName);
-                    choose_option(fifoName,strs); // escolhe a opçao e manda executar
-                    _exit(0);
-                }
+            pid_t pid = fork();
+            if (pid == 0) { // Filho
+                printf("Filho criado\n");
+                close(fd);
+                char **strs = parsing(&(fifoName[0]));
+                int codeSaida = choose_option(&(fifoName[0]),strs,tabela);
+                for (int i = 0; strs[i]; i++)
+                    free(strs[i]);
+                free(strs);
+                _exit(codeSaida); // escolhe a opçao e manda executar
             }
-            else{
-                fd = open(main,O_WRONLY);
-                perror("Pedido Inválido");
-                write(fd,"Pedido Inválido",17);
-            }
-            
         }
         close(fd);
     }
@@ -58,38 +58,39 @@ if (!persistencia(tabela))
 else
     g_print("Meta-informação gravada com sucesso em “%s”\n", META_FILENAME);
  */
+    close(main_fifo);
     return 0;
 }
 
 
 
-int choose_option(char *fifo[],char** s, GHashTable *tabela) {
-
+int choose_option(char *fifo, char** s, GHashTable *tabela) {
+    printf("Option:%s\n",s[0]);
     int exitCode;
-    if ( strcmp(s[1],"-a") == 0 )
+    if ( strcmp(s[0],"-a") == 0 )
     {
-        exitCode = indexaDoc(s[2], s[3], atoi(s[4]), s[5]);
+        exitCode = indexaDoc(tabela,s[1], s[2], atoi(s[3]), s[4], fifo);
     }
     
-    if ( strcmp(s[1],"-c") == 0 )
+    if ( strcmp(s[0],"-c") == 0 )
     {
-       exitCode = procuraID(fifo, atoi(s[2]), tabela);
+       exitCode = procuraID(fifo, atoi(s[1]), tabela);
     }
 
-    if ( strcmp(s[1],"-d") == 0 )
+    if ( strcmp(s[0],"-d") == 0 )
     {
-        exitCode = removeDoc (tabela, atoi(s[2]));
+        exitCode = removeDoc (tabela, atoi(s[1]));
     }
 
-    if ( strcmp(s[1],"-l") == 0 )
+    if ( strcmp(s[0],"-l") == 0 )
     {
-       exitCode = numeroLinhas(fifo, tabela, atoi(s[2]),(s[3]));
+       exitCode = numeroLinhas(fifo, tabela, atoi(s[1]),(s[2]));
     }
-    if ( strcmp(s[1],"-s") == 0 )
+    if ( strcmp(s[0],"-s") == 0 )
     {
-        //return listaIdDocs(s[2]);
+        //exitCode = listaIdDocs(s[1], tabela, fifo);
     }
 
-    // falta dar unlink ao fifo
+    unlink(fifo);
     return exitCode;
 }
