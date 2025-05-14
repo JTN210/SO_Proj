@@ -8,8 +8,6 @@
 
 #define META_FILENAME "Ficheirotemp"
 
-extern int ID;
-
 typedef struct Livro {
     char *title;
     char *author;
@@ -18,20 +16,20 @@ typedef struct Livro {
     int id; // identificador único
 } Livro;
 
-int indexaDoc(GHashTable *tabela, char* title, char* authors, int year, char* path, char *fifo);
+int indexaDoc(GHashTable **tabela, char* title, char* authors, int year, char* path, char *fifo, int *ID);
 
 //int consultaDoc(GHashTable *tabela);
 
-int removeDoc(GHashTable *tabela, int id);
+int removeDoc(GHashTable **tabela, int id);
 
-int numeroLinhas(const char *fifo, GHashTable *tabela, int id, const char *keyword);
+int numeroLinhas(const char *fifo, GHashTable **tabela, int id, const char *keyword);
 
-int choose_option(char *fifo, char** s, GHashTable *tabela);
+int choose_option(char *fifo, char** s, GHashTable **tabela, int *ID);
 
-int procuraID(char *fifo, int id, GHashTable *tabela);
+int procuraID(char *fifo, int id, GHashTable **tabela);
 
 int nGivenSigns(char *str, char c);
 
 char** parsing(char* fifoName);
 
-int persistencia(GHashTable *tabela);
+int persistencia(GHashTable **tabela);

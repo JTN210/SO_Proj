@@ -1,12 +1,11 @@
 // "Pedido Server"
 
 #include "dserver.h"
-// gcc -o dserver dserver.c -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0
 
 int ID;
 
 int main(int argc, char* argv[]){
-    ID = 1;
+    int ID = 1;
     int fd;
 
     char *main_fifo = "server_pipe";
@@ -17,9 +16,10 @@ int main(int argc, char* argv[]){
     int counter = 1;
     GHashTable *tabela = g_hash_table_new(g_int_hash, g_int_equal);
 
-    char docFolder = argv[1];
-    char cache_size = argv[2];
+    //char docFolder = argv[1];
+    //char cache_size = argv[2];
     while (1){
+        printf("ID = %d\n", ID);
         int fd = open(main_fifo, O_RDONLY);
         if (fd == -1)
         {
@@ -43,7 +43,8 @@ int main(int argc, char* argv[]){
                 printf("Filho criado\n");
                 close(fd);
                 char **strs = parsing(&(fifoName[0]));
-                int codeSaida = choose_option(&(fifoName[0]),strs,tabela);
+                int codeSaida = choose_option(&(fifoName[0]),strs,&tabela, &ID); //GHash **tabela
+                printf("Voltou ao loop\n");
                 for (int i = 0; strs[i]; i++)
                     free(strs[i]);
                 free(strs);
@@ -51,6 +52,13 @@ int main(int argc, char* argv[]){
             }
         }
         close(fd);
+    }
+    for (int i = 1; i <= ID; i++)
+    {
+        wait(NULL);
+        char buffer[32];
+        sprintf(buffer, "client_response%d", i);
+        unlink(buffer);
     }
 /* ISTO É A PARA METER O PERSISTENCIA A CORRER MAS PRIMEIRO O GAJO TEM DE EXECUTAR O ./dclient -f
 if (!persistencia(tabela))
@@ -64,31 +72,37 @@ else
 
 
 
-int choose_option(char *fifo, char** s, GHashTable *tabela) {
+int choose_option(char *fifo, char** s, GHashTable **tabela, int *ID) {
     printf("Option:%s\n",s[0]);
     int exitCode;
-    if ( strcmp(s[0],"-a") == 0 )
-    {
-        exitCode = indexaDoc(tabela,s[1], s[2], atoi(s[3]), s[4], fifo);
-    }
-    
-    if ( strcmp(s[0],"-c") == 0 )
-    {
-       exitCode = procuraID(fifo, atoi(s[1]), tabela);
-    }
-
-    if ( strcmp(s[0],"-d") == 0 )
-    {
-        exitCode = removeDoc (tabela, atoi(s[1]));
-    }
-
-    if ( strcmp(s[0],"-l") == 0 )
-    {
-       exitCode = numeroLinhas(fifo, tabela, atoi(s[1]),(s[2]));
-    }
-    if ( strcmp(s[0],"-s") == 0 )
-    {
-        //exitCode = listaIdDocs(s[1], tabela, fifo);
+    if((sizeof(s[0]) == (sizeof('-')*2))){
+        switch (s[0][1])
+        {
+            case 'a':
+                exitCode = indexaDoc(tabela, s[1], s[2], atoi(s[3]), s[4], fifo, ID);
+                printf("Dentro do choose_option o ID = %d\n", *ID);
+                break;
+            
+            case 'c':
+                exitCode = procuraID(fifo, atoi(s[1]), tabela);
+                break;
+            
+            case 'd':
+                exitCode = removeDoc(tabela, atoi(s[1]));
+                break;
+            
+            case 'l':
+                exitCode = numeroLinhas(fifo, tabela, atoi(s[1]), s[2]);
+                break;
+            
+            case 's':
+                // exitCode = listaIdDocs(s[1], tabela, fifo);
+                break;
+            
+            default:
+                //Inválido
+                break;
+        }
     }
 
     unlink(fifo);

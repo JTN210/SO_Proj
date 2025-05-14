@@ -1,6 +1,14 @@
 #include "dserver.h"
 
-int persistencia(GHashTable *tabela)
+static void printTable(gpointer key, gpointer value, gpointer user_data)
+{
+    printf("Printing book inside table\n");
+    Livro *novoLivro = (Livro*) value;
+
+    printf("Title = %s\nAuthor = %s\nYear = %d\nPath = %s\nID = %d\n", novoLivro->title, novoLivro->author, novoLivro->year, novoLivro->path, novoLivro->id);
+}
+
+int persistencia(GHashTable **tabela)
 {
     const char *final = META_FILENAME;
     char temp[512];
@@ -13,7 +21,7 @@ int persistencia(GHashTable *tabela)
     // 2) iterador GLib
     GHashTableIter iter;
     gpointer key, val;
-    g_hash_table_iter_init(&iter, tabela);
+    g_hash_table_iter_init(&iter, *tabela);
 
     while (g_hash_table_iter_next(&iter, &key, &val))
     {
@@ -117,9 +125,9 @@ char *getTextFromFile(int fd)
     return str;
 }
 
-int numeroLinhas(const char *fifo, GHashTable *tabela, int id, const char *keyword)
+int numeroLinhas(const char *fifo, GHashTable **tabela, int id, const char *keyword)
 {
-    Livro *procura = g_hash_table_lookup(tabela, GINT_TO_POINTER(id));
+    Livro *procura = g_hash_table_lookup(*tabela, GINT_TO_POINTER(id));
     int fdFIFO = open(fifo, O_WRONLY, 0666);
 
     if (!procura)
@@ -159,11 +167,13 @@ int numeroLinhas(const char *fifo, GHashTable *tabela, int id, const char *keywo
     return 1;
 }
 
-int procuraID(char *fifo, int id, GHashTable *tabela)
+int procuraID(char *fifo, int id, GHashTable **tabela)
 {
-    Livro *procura = g_hash_table_lookup(tabela, &(id));
+    printf("Uh?\n");
+    g_hash_table_foreach (*tabela, printTable, NULL);
+    int *key = &id;
+    Livro *procura = g_hash_table_lookup(*tabela, key);
     int fdFIFO = open(fifo, O_WRONLY, 0666);
-
     // Caso seja um indice invalido
     if (!procura)
     {
@@ -173,6 +183,7 @@ int procuraID(char *fifo, int id, GHashTable *tabela)
     }
     char str[512];
     int bytes_lidos = sprintf(str, "Title: %s | Author: %s | Year: %d | Path: %s\n", procura->title, procura->author, procura->year, procura->path);
+    printf("str = %s\n",str);
     write(fdFIFO, str, bytes_lidos);
     close(fdFIFO);
     return 1;
@@ -191,7 +202,14 @@ int nGivenSigns(char *str, char c)
 
 char **parsing(char *fifoName)
 {
+    //printf("Entrou no parsing com fifoName = %s\n", fifoName);
     int fdFIFO = open(fifoName, O_RDONLY, 0666);
+    //printf("WTF\n");
+    if (fdFIFO < 0)
+    {
+        perror("FIFO not opened");
+        return NULL;
+    }
 
     char str[512];
     int bytesRead = read(fdFIFO, &str, 511);
@@ -249,17 +267,13 @@ char **parsing(char *fifoName)
     return (strs);
 }
 
-static void printTable(gpointer key, gpointer value, gpointer user_data)
+int indexaDoc(GHashTable **tabela, char *title, char *authors, int year, char *path, char *fifo, int *ID)
 {
-    printf("What in the monkey\n");
-    int id = GPOINTER_TO_INT(key);
-    Livro *novoLivro = (Livro*) value;
+    if (*tabela == NULL) {
+        printf("Hash table is not initialized.\n");
+        return -1;
+    }
 
-    printf("Title = %s\nAuthor = %s\nYear = %d\nPath = %s\nID = %d\n", novoLivro->title, novoLivro->author, novoLivro->year, novoLivro->path, novoLivro->id);
-}
-
-int indexaDoc(GHashTable *tabela, char *title, char *authors, int year, char *path, char *fifo)
-{
     // printf("indexaDoc started\n");
     Livro *novoLivro = malloc(sizeof(Livro));
     if (!novoLivro)
@@ -274,7 +288,7 @@ int indexaDoc(GHashTable *tabela, char *title, char *authors, int year, char *pa
     novoLivro->author = strdup(authors);
     novoLivro->year = year;
     novoLivro->path = strdup(path);
-    novoLivro->id = ID;
+    novoLivro->id = *ID;
 
     if (!novoLivro->title || !novoLivro->author || !novoLivro->path)
     {
@@ -288,22 +302,36 @@ int indexaDoc(GHashTable *tabela, char *title, char *authors, int year, char *pa
     printf("Inserting Livro: Title=%s, Author=%s, Year=%d, Path=%s, Id=%d\n",
         novoLivro->title, novoLivro->author, novoLivro->year, novoLivro->path, novoLivro->id);
 
-    printf("Does this work %d\n", tabela);
-    g_hash_table_insert(tabela, GINT_TO_POINTER(novoLivro->id), novoLivro); // AHHHHHH
-    g_hash_table_foreach (tabela, printTable, NULL);
-    ID++;
+    //printf("Does this work %d\n", tabela);
 
-    printf("Chegou aqui\n");
-    int fd = open(fifo, O_RDWR, 0666);
-    printf("Fifo:%s",fifo);
-    write(fd, "Livro indexado\n", 16);
+    /*int *key = &(novoLivro->id);
+    g_hash_table_insert(tabela, key, novoLivro); // AHHHHHH*/
+    int *key = &(*ID);
+    gboolean inserted = g_hash_table_insert(*tabela, key, novoLivro);
+    if (inserted){
+        printf("Inserted correctly\n");
+    } else {
+        printf("Livro not inserted correctly in table\n");
+    }
+    printf("Size:%d\n",g_hash_table_size(*tabela));
+    g_hash_table_foreach (*tabela, printTable, NULL);
+    (*ID)++;
+    printf("Dentro do indexaDoc o ID = %d\n", *ID);
+
+    //printf("Chegou aqui\n");
+    int fd = open(fifo, O_WRONLY, 0666);
+    //printf("Fifo:%s\n",fifo);
+    char entrega[32];
+    int bytes = sprintf(entrega, "Livro indexado com id: %d\n", novoLivro->id);
+    write(fd, entrega, bytes);
     close(fd);
+    g_hash_table_foreach (*tabela, printTable, NULL);
     return 0;
 }
 
-int removeDoc(GHashTable *tabela, int id)
+int removeDoc(GHashTable **tabela, int id)
 {
-    gboolean removed = g_hash_table_remove(tabela, &id);
+    gboolean removed = g_hash_table_remove(*tabela, &id);
     if (removed)
     {
         printf("Document with ID %d removed successfully.\n", id);
@@ -317,7 +345,7 @@ int removeDoc(GHashTable *tabela, int id)
 }
 
 /*
-int listaIdDocs(char *keyword, GHashTable *tabela, char *fifo)
+int listaIdDocs(char *keyword, GHashTable **tabela, char *fifo)
 {
     g_hash_table_foreach (tabela, imprimir_par, fifo);
     g_hash_table_get_values();

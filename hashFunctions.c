@@ -2,14 +2,15 @@
 
 Livro criaLivro(char* title, char *);
 
-Livro* addBook(Livro* LivrosList, Livro newBook)
+Livro **append_livro(Livro **array, size_t *n, Livro *novo) 
 {
-    int lenList = 0;
-    for (; LivrosList[lenList]; lenList++);
-    Livro* newList = malloc(sizeof(Livro) * lenList + 2); // +1 para novo +1 para NULL
-    for (lenList = 0; LivrosList[lenList]; lenList++)
-        newList[lenList] = LivrosList[lenList];
-    newList[lenList++] = newBook;
-    newList[lenList] = NULL;
-    return newList;
+    Livro **tmp = realloc(array, (*n + 1) * sizeof(Livro*));
+    if (!tmp) {
+        /* falha no realloc: array original fica válido */
+        return array;
+    }
+    /* armazena o novo livro e atualiza o contador */
+    tmp[*n] = novo;
+    (*n)++;
+    return tmp;
 }
