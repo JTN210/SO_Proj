@@ -39,7 +39,8 @@ int main(int argc, char* argv[]){
             write(fd,fifoName,bytes);
 
             pid_t pid = fork();
-            if (pid == 0) { // Filho
+            if (pid == 0) 
+            { // Filho
                 printf("Filho criado\n");
                 close(fd);
                 char **strs = parsing(&(fifoName[0]));
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]){
                 free(strs);
                 _exit(codeSaida); // escolhe a opçao e manda executar
             }
+            
         }
         close(fd);
     }
